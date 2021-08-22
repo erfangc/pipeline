@@ -6,24 +6,25 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.io.File
 import java.nio.file.*
+import java.util.concurrent.LinkedBlockingQueue
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 
 @Service
-class FileWatcher {
+class FileProducer {
 
-    private val log = LoggerFactory.getLogger(FileWatcher::class.java)
+    private val log = LoggerFactory.getLogger(FileProducer::class.java)
     private val watchService = FileSystems.getDefault().newWatchService()
     private val dir: Path = Paths.get(dirToMonitor)
 
-    fun processExistingFilesInDirectory() {
+    fun processExistingFilesInDirectory(queue: LinkedBlockingQueue<Path>) {
         val existingFiles = dir.listDirectoryEntries().filter { !it.isDirectory() }
-        existingFiles.forEach { Shared.queue.offer(it) }
+        existingFiles.forEach { queue.offer(it) }
     }
 
     @Async
-    fun startWatchingDirectory() {
+    fun startWatchingDirectory(queue: LinkedBlockingQueue<Path>) {
         dir.register(
             watchService,
             StandardWatchEventKinds.ENTRY_CREATE,
@@ -35,7 +36,7 @@ class FileWatcher {
                 val context = event.context()
                 if (context is Path) {
                     log.info("Event kind:${event.kind()} File affected: " + context + "."                    )
-                    Shared.queue.offer(File(dirToMonitor, context.name).toPath())
+                    queue.offer(File(dirToMonitor, context.name).toPath())
                 }
             }
             key.reset()

@@ -29,8 +29,6 @@ class FileProcessor1(
                 currentLine++
             }
 
-        val processedFile = processedFileRepository.getById(filename)
-        processedFileRepository.save(processedFile.apply { finishedProcessing = true })
     }
 
 }

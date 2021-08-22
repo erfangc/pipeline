@@ -5,6 +5,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.scheduling.annotation.EnableAsync
+import java.nio.file.Path
+import java.util.concurrent.LinkedBlockingQueue
 
 
 @EnableAsync
@@ -12,10 +14,11 @@ import org.springframework.scheduling.annotation.EnableAsync
 class PipelineApplication {
 
     @Bean
-    fun cmd(fileDispatcher: FileDispatcher, fileWatcher: FileWatcher) = CommandLineRunner {
-        fileWatcher.startWatchingDirectory()
-        fileWatcher.processExistingFilesInDirectory()
-        fileDispatcher.run()
+    fun cmd(fileConsumer: FileConsumer, fileProducer: FileProducer) = CommandLineRunner {
+        val queue = LinkedBlockingQueue<Path>()
+        fileProducer.startWatchingDirectory(queue)
+        fileProducer.processExistingFilesInDirectory(queue)
+        fileConsumer.startConsuming(queue)
     }
 }
 
