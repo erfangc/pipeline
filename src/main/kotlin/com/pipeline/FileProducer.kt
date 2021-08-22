@@ -25,17 +25,14 @@ class FileProducer {
 
     @Async
     fun startWatchingDirectory(queue: LinkedBlockingQueue<Path>) {
-        dir.register(
-            watchService,
-            StandardWatchEventKinds.ENTRY_CREATE,
-        )
+        dir.register(watchService, StandardWatchEventKinds.ENTRY_CREATE)
         log.info("Started monitoring $dir")
         var key: WatchKey
         while (watchService.take().also { key = it } != null) {
             for (event: WatchEvent<*> in key.pollEvents()) {
                 val context = event.context()
                 if (context is Path) {
-                    log.info("Event kind:${event.kind()} File affected: " + context + "."                    )
+                    log.info("Event kind:${event.kind()} File affected: " + context + ".")
                     queue.offer(File(dirToMonitor, context.name).toPath())
                 }
             }

@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.nio.file.Path
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 import kotlin.io.path.name
 
 @Service
@@ -32,10 +33,13 @@ class FileConsumer(
     fun startConsuming(queue: LinkedBlockingQueue<Path>) {
 
         log.info("Started ${this::class.simpleName} to consume file queue")
-        var path: Path
+        var path: Path?
 
         while (running) {
-            path = queue.take()
+            path = queue.poll(1, TimeUnit.SECONDS)
+            if (path == null) {
+                continue
+            }
             val filename = path.name
             val processedFile = processedFileRepository.findByIdOrNull(filename)
             if (processedFile?.finishedProcessing == true) {
